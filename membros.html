@@ -34,6 +34,12 @@
   .hide{display:none}
   .muted{font-size:13px;color:var(--grey);text-align:center;margin-top:14px}
   .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .upsell{margin-top:18px;padding:18px;border:2px dashed var(--green);border-radius:14px;background:#f4faf6;text-align:center}
+  .upsell .ribbon{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:800;font-size:11px;padding:3px 10px;border-radius:20px;letter-spacing:.03em}
+  .upsell h3{color:var(--green-d);font-size:18px;margin:10px 0 4px}
+  .upsell p{color:#3a464f;font-size:14px;margin:0 0 6px}
+  .upsell .price{font-size:13px;color:var(--grey);margin:6px 0 0}
+  .upsell .price b{color:var(--green-d);font-size:16px}
 </style>
 </head>
 <body>
@@ -79,6 +85,13 @@
       <div class="row"><h2>Seu material 🏆</h2><button class="link" id="logoutBtn">Sair</button></div>
       <p>Baixe, imprima e bola pra dentro! Os links valem por 1 hora — é só clicar de novo se expirar.</p>
       <div id="catalog"></div>
+      <div id="upsell" class="upsell hide">
+        <div class="ribbon">OFERTA SÓ PRA QUEM JÁ É ALUNO</div>
+        <h3>Leve o Pacote Completo 🚀</h3>
+        <p>Mais de 40 atividades da Copa do Mundo: coordenação motora, leitura, colorir, contar e muito mais — tudo pronto pra imprimir.</p>
+        <a id="upsellBtn" class="btn" href="#" target="_blank" rel="noopener">Quero o Pacote Completo</a>
+        <p class="price">Acesso imediato aqui na mesma área • <b>R$ 27</b></p>
+      </div>
     </div>
 
     <div id="loading" class="muted">Carregando…</div>
@@ -95,11 +108,24 @@
     { ic:"🎨", title:"Bônus: Livrinho de Colorir da Copa", desc:"Páginas pra colorir", path:"bonus/livrinho-colorir.pdf" },
     { ic:"🌍", title:"Bônus: Viajando pelos Países da Copa", desc:"Conhecer os países do mundial", path:"bonus/viajando-paises.pdf" },
   ];
+  const PACOTE_PRODUCT = "missao_hexa_pacote";
+  const PACOTE_ITEM = { ic:"📚", title:"Pacote Completo — Atividades da Copa", desc:"43 páginas • coordenação, leitura, colorir e mais", path:"pacote/atividades-copa.pdf" };
+  // Checkout do Pacote Completo (R$27) na Cakto:
+  const PACOTE_CHECKOUT = "https://pay.cakto.com.br/sa8pvrc_928279";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   const $ = (id) => document.getElementById(id);
   const show = (id) => $(id).classList.remove("hide");
   const hide = (id) => $(id).classList.add("hide");
   function msg(el, text, ok){ const m=$(el); m.textContent=text; m.className="msg "+(ok?"ok":"err"); }
+
+  function addItem(container, it){
+    const div=document.createElement("div"); div.className="item";
+    div.innerHTML=`<div class="ic">${it.ic}</div><div class="info"><h3>${it.title}</h3><small>${it.desc}</small></div>`;
+    const b=document.createElement("button"); b.className="dl"; b.textContent="Baixar";
+    b.onclick=async()=>{ b.textContent="..."; const { data, error }=await sb.storage.from(BUCKET).createSignedUrl(it.path,3600);
+      if (error){ b.textContent="Erro"; return; } window.open(data.signedUrl,"_blank"); b.textContent="Baixar"; };
+    div.appendChild(b); container.appendChild(div);
+  }
 
   async function render(){
     hide("auth"); hide("content"); hide("nobuy"); hide("reset"); show("loading");
@@ -108,19 +134,16 @@
     if (hash.get("type") === "recovery") { hide("loading"); show("reset"); return; }
     const { data:{ session } } = await sb.auth.getSession();
     if (!session){ hide("loading"); show("auth"); return; }
-    // tem entitlement ativo?
-    const { data: ent } = await sb.from("entitlements").select("id").eq("product",PRODUCT).eq("status","active").limit(1);
-    if (!ent || !ent.length){ hide("loading"); show("nobuy"); return; }
+    // entitlements ativos (base + pacote)
+    const { data: ents } = await sb.from("entitlements").select("product").eq("status","active");
+    const owned = new Set((ents||[]).map(e=>e.product));
+    const hasBase = owned.has(PRODUCT), hasPacote = owned.has(PACOTE_PRODUCT);
+    if (!hasBase && !hasPacote){ hide("loading"); show("nobuy"); return; }
     // catálogo
     const c = $("catalog"); c.innerHTML="";
-    for (const it of CATALOG){
-      const div=document.createElement("div"); div.className="item";
-      div.innerHTML=`<div class="ic">${it.ic}</div><div class="info"><h3>${it.title}</h3><small>${it.desc}</small></div>`;
-      const b=document.createElement("button"); b.className="dl"; b.textContent="Baixar";
-      b.onclick=async()=>{ b.textContent="..."; const { data, error }=await sb.storage.from(BUCKET).createSignedUrl(it.path,3600);
-        if (error){ b.textContent="Erro"; return; } window.open(data.signedUrl,"_blank"); b.textContent="Baixar"; };
-      div.appendChild(b); c.appendChild(div);
-    }
+    if (hasBase) for (const it of CATALOG) addItem(c, it);
+    if (hasPacote){ addItem(c, PACOTE_ITEM); hide("upsell"); }
+    else if (hasBase){ $("upsellBtn").href = PACOTE_CHECKOUT; show("upsell"); }
     hide("loading"); show("content");
   }
 
