@@ -42,6 +42,7 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
   :root{
     --green:#0B7A3B; --green-d:#075E2D; --yellow:#FFD200; --ink:#16202a;
     --grey:#5b6770; --line:#e6e9ec; --bg:#ffffff; --soft:#f4f7f5; --red:#d92d20;
+    --blue:#1C3FAA; --blue-d:#142d7a;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
@@ -53,7 +54,11 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
   p{margin:12px 0}
   .em{color:var(--red);font-weight:800}
   .em2{color:var(--green);font-weight:800}
-  .topbar{background:var(--green);color:#fff;text-align:center;font-size:13px;font-weight:700;padding:8px}
+  .topbar{background:linear-gradient(90deg,var(--green-d),var(--green));color:#fff;text-align:center;font-size:13px;font-weight:800;padding:9px;letter-spacing:.02em}
+  .flagstripe{height:6px;background:linear-gradient(90deg,var(--green) 0 33%,var(--yellow) 33% 66%,var(--blue) 66% 100%)}
+  .counter{display:none;align-items:center;gap:10px;justify-content:center;background:#eafaf0;border:1px solid #b6e6c8;color:var(--green-d);border-radius:12px;padding:11px 14px;margin:16px 0;font-weight:800;font-size:15px}
+  .counter .dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:#16a34a;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
   .meta{color:var(--grey);font-size:13px;border-bottom:1px solid var(--line);padding:14px 0;margin-top:14px}
   .lead{font-size:19px;color:#2a3640}
   .hero{margin:18px 0;border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.07)}
@@ -98,7 +103,8 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
 </head>
 <body>
 
-<div class="topbar">⚽ MÃES E PROFESSORAS • COPA 2026 • MATERIAL PRA IMPRIMIR EM CASA</div>
+<div class="topbar">⚽ MÃES E PROFESSORAS • COPA DO MUNDO 2026 • MATERIAL PRA IMPRIMIR EM CASA 🇧🇷</div>
+<div class="flagstripe"></div>
 
 <div class="wrap">
 
@@ -109,6 +115,8 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
   <p class="lead">Enquanto o Brasil vai pro Hexa, tem mãe acabando com a guerra da lição usando a própria febre da Copa do filho como isca. Em poucos dias a criança troca o tablet pelo lápis e resolve conta atrás de conta — porque QUER completar o álbum, não porque você mandou.</p>
 
   <img class="hero" src="capa.png" alt="Criança usando as atividades da Copa 2026" />
+
+  <div class="counter" id="counter1"><span class="dot"></span><span class="ctxt"></span></div>
 
   <div class="box">
     <b>A verdade que ninguém te conta:</b> seu filho não "odeia estudar" — ele só nunca teve um motivo que ele AMASSE. A mesma criança que foge da lição passa horas montando figurinha. Esse "vício" de completar é o que faz ela resolver uma conta atrás da outra sem reclamar. É o que eu chamo de <b>Efeito Figurinha</b>: a empolgação da Copa vira gasolina pro cérebro aprender.
@@ -160,7 +168,8 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
 
   <!-- ========================= OFERTA ========================= -->
   <div class="offer" id="oferta">
-    <div class="scarcity">🔥 Preço de lançamento da Copa — sobe quando a bola rolar</div>
+    <div class="flagstripe" style="border-radius:16px 16px 0 0;margin:-22px -18px 16px"></div>
+    <div class="counter" id="counter2" style="margin:0 auto 12px"><span class="dot"></span><span class="ctxt"></span></div>
     <p style="font-weight:800;margin:0">Álbum Missão Hexa 2026 — completo (6 níveis)</p>
     <p style="font-size:15px;color:#33404a;margin:8px 0 0">Seu filho fazendo conta sozinho — <b>mesmo que ele "odeie" matemática</b>, mesmo que só viva no celular, mesmo que você já tenha tentado de tudo.</p>
     <div class="price-old">de R$ 29,90</div>
@@ -173,7 +182,7 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
     <div class="seal">GARANTIA<br>7 DIAS<br>ou seu dinheiro de volta</div>
 
     <div class="badges">
-      <span>🔒 Compra segura</span><span>⭐ 4,9/5</span><span>📩 Entrega na hora</span><span>🇧🇷 Tema Copa 2026</span>
+      <span>🔒 Compra segura</span><span>📩 Entrega na hora</span><span>🖨️ Imprime em casa</span><span>🇧🇷 Tema Copa 2026</span>
     </div>
   </div>
 
@@ -227,6 +236,30 @@ y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,
     var o=document.getElementById('oferta'); if(!o||seen) return;
     if(o.getBoundingClientRect().top < window.innerHeight){ seen=true; if(window.clarity) clarity('event','viewed_offer'); }
   });
+
+  // ===== Contador REAL de compras (puxa o número verdadeiro do banco) =====
+  (function(){
+    var MIN_MOSTRAR = 20; // só aparece quando houver vendas reais suficientes (pode trocar este número)
+    function setCounter(n){
+      if(typeof n!=='number' || n < MIN_MOSTRAR) return; // abaixo do limite fica escondido (nada falso)
+      document.querySelectorAll('.counter').forEach(function(el){
+        el.querySelector('.ctxt').textContent = n.toLocaleString('pt-BR') + ' famílias já garantiram o Missão Hexa';
+        el.style.display = 'flex';
+      });
+    }
+    var s=document.createElement('script');
+    s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    s.onload=function(){
+      try{
+        var sb=window.supabase.createClient(
+          "https://nwpoweamwnjqbgnwpusq.supabase.co",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cG93ZWFtd25qcWJnbndwdXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTM1NTQsImV4cCI6MjA5NjY4OTU1NH0.X4wYz5hO-zB7Lxiy1Tl-t38Mp1n-c978L-iw7JMWYNQ"
+        );
+        sb.rpc('missao_hexa_vendas').then(function(r){ if(!r.error) setCounter(r.data); });
+      }catch(e){}
+    };
+    document.head.appendChild(s);
+  })();
 </script>
 </body>
 </html>
